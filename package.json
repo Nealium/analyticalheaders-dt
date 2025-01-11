@@ -1,0 +1,40 @@
+{
+  "name": "analyticalheaders-dt",
+  "version": "1.0.0",
+  "description": "AnalyticalHeaders for DataTables",
+  "main": "js/dataTables.analyticalHeaders.js",
+  "types": "./types/types.d.ts",
+  "files": [
+    "js/**/*.js",
+    "types/**/*.d.ts"
+  ],
+  "keywords": [
+    "AnalyticalHeaders",
+    "Datatables",
+    "jQuery",
+    "table",
+    "average",
+    "standard_deviation",
+    "filter"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.6.0",
+    "@types/jquery": "^3.5.32",
+    "eslint": "^9.6.0",
+    "markuplint": "^4.9.2",
+    "prettier": "3.2.5",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "datatables.net-dt": ">=1.10.19",
+    "jquery": ">=1.7"
+  },
+  "ignore": [
+    "package.json"
+  ],
+  "author": {
+    "name": "Neal Joslin",
+    "email": "neal@joslin.io"
+  },
+  "license": "MIT"
+}
