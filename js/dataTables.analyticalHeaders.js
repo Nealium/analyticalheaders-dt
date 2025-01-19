@@ -437,17 +437,17 @@
                   filter: "applied",
                 })
                 .data()
-                .average(parser);
+                .averageAndCount(parser);
 
               // unpack res
-              len = res[1];
-              avg = res[0];
+              len = res.count;
+              avg = res.average;
               let txt = "";
 
               if (!isNaN(avg)) {
-                const tmp = res[0].toFixed(2);
+                const tmp = avg.toFixed(2);
                 if (parseFloat(tmp) === 0) {
-                  txt = res[0].toFixed(3);
+                  txt = avg.toFixed(3);
                 } else {
                   txt = tmp;
                 }
@@ -470,12 +470,16 @@
                 .empty()
                 .append(
                   $("<span class='ah_stddev_population'></span>").append(
-                    !isNaN(res[0]) && res[0] != 0 ? res[0].toFixed(2) : "",
+                    !isNaN(res.population) && res.population != 0
+                      ? res.population.toFixed(2)
+                      : "",
                   ),
                 )
                 .append(
                   $("<span class='ah_stddev_sample'></span>").append(
-                    !isNaN(res[1]) && res[1] != 0 ? res[1].toFixed(2) : "",
+                    !isNaN(res.sample) && res.sample != 0
+                      ? res.sample.toFixed(2)
+                      : "",
                   ),
                 );
 
@@ -510,36 +514,32 @@
      * calculate the average of a column
      * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
      *   parser function for encoded values
-     * @returns {[number, number]} average and count
+     * @returns {{average: number, count:number}} average and count
      */
-    function _average(parser = null) {
+    function _average_and_count(parser = null) {
       const data = this.flatten();
 
       const sum = data.reduce(
-        (/** @type string **/ a, /** @type string **/ b) => {
+        (
+          /** @type number **/ accumulator,
+          /** @type string|number **/ item,
+        ) => {
           // normalize
-          let _a;
-          let _b;
+          let _item;
 
           if (parser !== null) {
-            _a = parser(a);
-            _b = parser(b);
+            _item = parser(item);
           } else {
-            _a = a !== null ? a.toString() : "";
-            _b = b !== null ? b.toString() : "";
+            _item = item !== null ? item.toString() : "";
           }
 
           // transform into number
-          let casted_a = parseFloat(_a);
-          let casted_b = parseFloat(_b);
-          if (isNaN(casted_a)) {
-            casted_a = 0;
-          }
-          if (isNaN(casted_b)) {
-            casted_b = 0;
+          let casted_item = parseFloat(_item);
+          if (isNaN(casted_item)) {
+            return accumulator;
           }
 
-          return casted_a + casted_b;
+          return accumulator + casted_item;
         },
         0,
       );
@@ -550,7 +550,10 @@
           item ? accumulator + 1 : accumulator,
         0,
       );
-      return [sum / count, count];
+      return {
+        average: sum / count,
+        count: count,
+      };
     }
 
     /**
@@ -559,7 +562,8 @@
      * @param {number} count - number of valid items
      * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
      *   parser function for encoded values
-     * @returns {[number, number]} standard deviations (population, sample)
+     * @returns {{population: number, sample: number}}
+     *   standard deviations (population, sample)
      */
     function _standard_deviation(average, count, parser = null) {
       const data = this.flatten();
@@ -585,21 +589,21 @@
           const diff = casted_item - average;
           return diff * diff;
         })
-        .reduce((/** @type number|null **/ a, /** @type number|null **/ b) => {
-          /** get sum **/
-          if (a === null) {
-            a = 0;
-          }
-          if (b === null) {
-            b = 0;
-          }
-          return a + b;
-        }, 0);
+        .reduce(
+          (/** @type number **/ accumulator, /** @type number **/ item) => {
+            /** get sum **/
+            if (item === null) {
+              return accumulator;
+            }
+            return accumulator + item;
+          },
+          0,
+        );
 
-      return [
-        Math.sqrt(almost_variance / count),
-        Math.sqrt(almost_variance / (count - 1)),
-      ];
+      return {
+        population: Math.sqrt(almost_variance / count),
+        sample: Math.sqrt(almost_variance / (count - 1)),
+      };
     }
 
     /**
@@ -619,7 +623,7 @@
     }
 
     // register req commands
-    DataTable.Api.register("average()", _average);
+    DataTable.Api.register("averageAndCount()", _average_and_count);
     DataTable.Api.register("standardDeviation()", _standard_deviation);
     DataTable.Api.register("truePercentage()", _true_percentage);
 

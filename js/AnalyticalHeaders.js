@@ -391,17 +391,17 @@ class AnalyticalHeaders {
               filter: "applied",
             })
             .data()
-            .average(parser);
+            .averageAndCount(parser);
 
           // unpack res
-          len = res[1];
-          avg = res[0];
+          len = res.count;
+          avg = res.average;
           let txt = "";
 
           if (!isNaN(avg)) {
-            const tmp = res[0].toFixed(2);
+            const tmp = avg.toFixed(2);
             if (parseFloat(tmp) === 0) {
-              txt = res[0].toFixed(3);
+              txt = avg.toFixed(3);
             } else {
               txt = tmp;
             }
@@ -424,12 +424,16 @@ class AnalyticalHeaders {
             .empty()
             .append(
               $("<span class='ah_stddev_population'></span>").append(
-                !isNaN(res[0]) && res[0] != 0 ? res[0].toFixed(2) : "",
+                !isNaN(res.population) && res.population != 0
+                  ? res.population.toFixed(2)
+                  : "",
               ),
             )
             .append(
               $("<span class='ah_stddev_sample'></span>").append(
-                !isNaN(res[1]) && res[1] != 0 ? res[1].toFixed(2) : "",
+                !isNaN(res.sample) && res.sample != 0
+                  ? res.sample.toFixed(2)
+                  : "",
               ),
             );
 

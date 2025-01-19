@@ -110,14 +110,14 @@ declare module "datatables.net" {
   }
 
   interface Api {
-    average(
+    averageAndCount(
       parser: ((raw: string | number) => string | null) | null,
-    ): [number, number];
+    ): {average: number, count:number};
     standardDeviation(
       average: number,
       count: number,
       parser: ((raw: string | number) => string | null) | null,
-    ): [number, number];
+    ): {population: number, sample: number};
     truePercentage(true_value: string): string;
   }
 

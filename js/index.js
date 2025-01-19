@@ -11,36 +11,32 @@ import AnalyticalHeaders from "./AnalyticalHeaders";
  * calculate the average of a column
  * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
  *   parser function for encoded values
- * @returns {[number, number]} average and count
+ * @returns {{average: number, count:number}} average and count
  */
-function _average(parser = null) {
+function _average_and_count(parser = null) {
   const data = this.flatten();
 
-  const sum = data.reduce((/** @type string **/ a, /** @type string **/ b) => {
-    // normalize
-    let _a;
-    let _b;
+  const sum = data.reduce(
+    (/** @type number **/ accumulator, /** @type string|number **/ item) => {
+      // normalize
+      let _item;
 
-    if (parser !== null) {
-      _a = parser(a);
-      _b = parser(b);
-    } else {
-      _a = a !== null ? a.toString() : "";
-      _b = b !== null ? b.toString() : "";
-    }
+      if (parser !== null) {
+        _item = parser(item);
+      } else {
+        _item = item !== null ? item.toString() : "";
+      }
 
-    // transform into number
-    let casted_a = parseFloat(_a);
-    let casted_b = parseFloat(_b);
-    if (isNaN(casted_a)) {
-      casted_a = 0;
-    }
-    if (isNaN(casted_b)) {
-      casted_b = 0;
-    }
+      // transform into number
+      let casted_item = parseFloat(_item);
+      if (isNaN(casted_item)) {
+        return accumulator;
+      }
 
-    return casted_a + casted_b;
-  }, 0);
+      return accumulator + casted_item;
+    },
+    0,
+  );
 
   // count of _valid_ items
   const count = data.reduce(
@@ -48,7 +44,10 @@ function _average(parser = null) {
       item ? accumulator + 1 : accumulator,
     0,
   );
-  return [sum / count, count];
+  return {
+    average: sum / count,
+    count: count,
+  };
 }
 
 /**
@@ -57,7 +56,8 @@ function _average(parser = null) {
  * @param {number} count - number of valid items
  * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
  *   parser function for encoded values
- * @returns {[number, number]} standard deviations (population, sample)
+ * @returns {{population: number, sample: number}}
+ *   standard deviations (population, sample)
  */
 function _standard_deviation(average, count, parser = null) {
   const data = this.flatten();
@@ -83,21 +83,18 @@ function _standard_deviation(average, count, parser = null) {
       const diff = casted_item - average;
       return diff * diff;
     })
-    .reduce((/** @type number|null **/ a, /** @type number|null **/ b) => {
+    .reduce((/** @type number **/ accumulator, /** @type number **/ item) => {
       /** get sum **/
-      if (a === null) {
-        a = 0;
+      if (item === null) {
+        return accumulator;
       }
-      if (b === null) {
-        b = 0;
-      }
-      return a + b;
+      return accumulator + item;
     }, 0);
 
-  return [
-    Math.sqrt(almost_variance / count),
-    Math.sqrt(almost_variance / (count - 1)),
-  ];
+  return {
+    population: Math.sqrt(almost_variance / count),
+    sample: Math.sqrt(almost_variance / (count - 1)),
+  };
 }
 
 /**
@@ -116,7 +113,7 @@ function _true_percentage(true_value) {
 }
 
 // register req commands
-DataTable.Api.register("average()", _average);
+DataTable.Api.register("averageAndCount()", _average_and_count);
 DataTable.Api.register("standardDeviation()", _standard_deviation);
 DataTable.Api.register("truePercentage()", _true_percentage);
 
