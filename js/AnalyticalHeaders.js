@@ -137,6 +137,7 @@ class AnalyticalHeaders {
           ) {
             extra_check = [];
           }
+          // eslint-disable-next-line @typescript-eslint/no-this-alias
           const col = this;
           this.data()
             .unique()
@@ -177,7 +178,7 @@ class AnalyticalHeaders {
             });
         }
       }
-      row.append($("<th></th>").append(selectObj ? selectObj : ""));
+      row.append($("<th></th>").addClass("ah_cell").append(selectObj ? selectObj : ""));
     });
     $(this.dt.table().header()).append(row);
   }
@@ -195,7 +196,7 @@ class AnalyticalHeaders {
         // first column gets info of what the row is
         cell = $("<th></th>")
           .css("text-align", "center")
-          .addClass(`ah_avg_${this.index()}`)
+          .addClass(`ah_cell ah_avg_${this.index()}`)
           .html("Averages");
       } else if (
         ~opts.targets.indexOf(this.index()) ||
@@ -204,13 +205,14 @@ class AnalyticalHeaders {
         // Column gets an average cell
         cell = $("<th></th>")
           .css("text-align", "center")
-          .addClass(`ah_avg_${this.index()}`);
+          .addClass(`ah_cell ah_avg_${this.index()}`);
       } else {
         // Empty Cell
         cell = $("<th></th>").css(
           "background-color",
           opts.empty_background_color,
-        );
+        )
+        .addClass("ah_cell");
       }
       row.append(cell);
     });
@@ -231,6 +233,7 @@ class AnalyticalHeaders {
         // first column gets info of what the row is
         cell = $("<th></th>")
           .css("text-align", "center")
+          .addClass("ah_cell")
           .html("Standard Deviation");
       } else if (this.index() == 1) {
         // StandardDev has two types, Population and Sample
@@ -250,7 +253,10 @@ class AnalyticalHeaders {
             }
           });
 
-        cell = $("<th></th>").css("text-align", "center").append(toggleBtn);
+        cell = $("<th></th>")
+          .css("text-align", "center")
+          .addClass("ah_cell")
+          .append(toggleBtn);
       } else if (
         ~opts.targets.indexOf(this.index()) ||
         ~Object.keys(opts.encoded).indexOf(this.index().toString())
@@ -258,12 +264,14 @@ class AnalyticalHeaders {
         // Column gets an Std cell
         cell = $("<th></th>")
           .css("text-align", "center")
-          .addClass(`ah_stddev_${this.index()}`);
+          .addClass(`ah_cell ah_stddev_${this.index()}`);
       } else {
-        cell = $("<th></th>").css(
-          "background-color",
-          opts.empty_background_color,
-        );
+        cell = $("<th></th>")
+          .css(
+            "background-color",
+            opts.empty_background_color,
+          )
+          .addClass("ah_cell");
       }
       row.append(cell);
     });
@@ -330,7 +338,7 @@ class AnalyticalHeaders {
       nCell = row.firstChild;
       const rowChildren = row.children;
 
-      for (j = 0, jLen = rows.length; j < jLen; j++) {
+      for (j = 0, jLen = rowChildren.length; j < jLen; j++) {
         nCell = rowChildren[j];
 
         if (

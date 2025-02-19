@@ -149,3 +149,49 @@ $(document).on("plugin-init.dt", function (e, settings) {
     }
   }
 });
+
+$(document).on("options.dt", function (e, settings) {
+  if (e.namespace !== "dt") {
+    return;
+  }
+
+  if (settings.buttons) {
+    const isExport = (/** @type string */ item) => {
+      return (
+        item.includes("copy") || item.includes("excel") || item.includes("csv")
+      );
+    };
+    const customizeData = (
+      /** @type {import("../types/types.d.ts").ButtonsExportCustomizeData} */ data,
+    ) => {
+      data["headerStructure"] = [data["headerStructure"][0]];
+      data["header"] = data["headerStructure"][0].map((x) => x.title);
+    };
+    const injected_settings = [];
+    settings.buttons.forEach((/** @type string | object */ item) => {
+      if (typeof item === "string" && isExport(item)) {
+        injected_settings.push({
+          extend: item,
+          exportOptions: {
+            columns: ":visible",
+            customizeData: customizeData,
+          },
+        });
+      } else if (
+        typeof item === "object" &&
+        isExport(item.extend) &&
+        !("customizeData" in item)
+      ) {
+        const _item = item;
+        _item.exportOptions = {
+          columns: ":visible",
+          customizeData: customizeData,
+        };
+        injected_settings.push(_item);
+      } else {
+        injected_settings.push(item);
+      }
+    });
+    settings.buttons = injected_settings;
+  }
+});

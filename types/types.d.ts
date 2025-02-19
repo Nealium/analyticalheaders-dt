@@ -89,7 +89,7 @@ interface AnalyticalHeadersStatsConfig {
    * }
    * ```
    */
-  boolean: { column_index: (raw: string) => boolean | null;  };
+  boolean: { column_index: (raw: string) => boolean | null };
   /**
    * background of cells that are not targeted
    *
@@ -103,6 +103,27 @@ interface AnalyticalHeadersConfig {
   stats?: AnalyticalHeadersStatsConfig | boolean;
 }
 
+interface TableElementStructure {
+  /** colspan of cell */
+  colspan: number,
+  /** rowspan of cell */
+  rowspan: number,
+  /** text of cell */
+  title: string,
+}
+interface ButtonsExportCustomizeData {
+  /** compiled tbody of datatable */
+  body: string[][]
+  /** compiled footer of datatable */
+  footer: string[]
+  /** structure of footer */
+  footerStructure: TableElementStructure[][]
+  /** compiled header of datatable */
+  header: string[]
+  /** structure of header */
+  headerStructure: TableElementStructure[][]
+}
+
 declare module "datatables.net" {
   interface Config {
     /* AnalyticalHeaders options */
@@ -110,14 +131,15 @@ declare module "datatables.net" {
   }
 
   interface Api {
-    averageAndCount(
-      parser: ((raw: string | number) => string | null) | null,
-    ): {average: number, count:number};
+    averageAndCount(parser: ((raw: string | number) => string | null) | null): {
+      average: number;
+      count: number;
+    };
     standardDeviation(
       average: number,
       count: number,
       parser: ((raw: string | number) => string | null) | null,
-    ): {population: number, sample: number};
+    ): { population: number; sample: number };
     truePercentage(true_value: string): string;
   }
 
@@ -149,4 +171,6 @@ export {
   AnalyticalHeadersConfig,
   AnalyticalHeadersFilterConfig,
   AnalyticalHeadersStatsConfig,
+  TableElementStructure,
+  ButtonsExportCustomizeData,
 };

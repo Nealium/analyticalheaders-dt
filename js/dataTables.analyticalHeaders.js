@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable no-undef */
 /**
  * AnalyticHeaders Datatables extension
  * @module AnalyticalHeaders
@@ -178,6 +180,7 @@
               ) {
                 extra_check = [];
               }
+              // eslint-disable-next-line @typescript-eslint/no-this-alias
               const col = this;
               this.data()
                 .unique()
@@ -221,7 +224,11 @@
                 });
             }
           }
-          row.append($("<th></th>").append(selectObj ? selectObj : ""));
+          row.append(
+            $("<th></th>")
+              .addClass("ah_cell")
+              .append(selectObj ? selectObj : ""),
+          );
         });
         $(this.dt.table().header()).append(row);
       }
@@ -239,7 +246,7 @@
             // first column gets info of what the row is
             cell = $("<th></th>")
               .css("text-align", "center")
-              .addClass(`ah_avg_${this.index()}`)
+              .addClass(`ah_cell ah_avg_${this.index()}`)
               .html("Averages");
           } else if (
             ~opts.targets.indexOf(this.index()) ||
@@ -248,13 +255,12 @@
             // Column gets an average cell
             cell = $("<th></th>")
               .css("text-align", "center")
-              .addClass(`ah_avg_${this.index()}`);
+              .addClass(`ah_cell ah_avg_${this.index()}`);
           } else {
             // Empty Cell
-            cell = $("<th></th>").css(
-              "background-color",
-              opts.empty_background_color,
-            );
+            cell = $("<th></th>")
+              .css("background-color", opts.empty_background_color)
+              .addClass("ah_cell");
           }
           row.append(cell);
         });
@@ -275,6 +281,7 @@
             // first column gets info of what the row is
             cell = $("<th></th>")
               .css("text-align", "center")
+              .addClass("ah_cell")
               .html("Standard Deviation");
           } else if (this.index() == 1) {
             // StandardDev has two types, Population and Sample
@@ -294,7 +301,10 @@
                 }
               });
 
-            cell = $("<th></th>").css("text-align", "center").append(toggleBtn);
+            cell = $("<th></th>")
+              .css("text-align", "center")
+              .addClass("ah_cell")
+              .append(toggleBtn);
           } else if (
             ~opts.targets.indexOf(this.index()) ||
             ~Object.keys(opts.encoded).indexOf(this.index().toString())
@@ -302,12 +312,11 @@
             // Column gets an Std cell
             cell = $("<th></th>")
               .css("text-align", "center")
-              .addClass(`ah_stddev_${this.index()}`);
+              .addClass(`ah_cell ah_stddev_${this.index()}`);
           } else {
-            cell = $("<th></th>").css(
-              "background-color",
-              opts.empty_background_color,
-            );
+            cell = $("<th></th>")
+              .css("background-color", opts.empty_background_color)
+              .addClass("ah_cell");
           }
           row.append(cell);
         });
@@ -374,7 +383,7 @@
           nCell = row.firstChild;
           const rowChildren = row.children;
 
-          for (j = 0, jLen = rows.length; j < jLen; j++) {
+          for (j = 0, jLen = rowChildren.length; j < jLen; j++) {
             nCell = rowChildren[j];
 
             if (
@@ -657,6 +666,57 @@
         if (!settings._analyticalHeaders) {
           _init(settings, null);
         }
+      }
+    });
+
+    // Attach a listener for options /before/ they are passed into any
+    // Datatable. This is to override Button exporting function to exclude the
+    // additional headers.
+    $(document).on("options.dt", function (e, settings) {
+      if (e.namespace !== "dt") {
+        return;
+      }
+
+      if (settings.buttons) {
+        const isExport = (/** @type string */ item) => {
+          return (
+            item.includes("copy") ||
+            item.includes("excel") ||
+            item.includes("csv")
+          );
+        };
+        const customizeData = (
+          /** @type {import("analyticalheaders-dt").ButtonsExportCustomizeData} */ data,
+        ) => {
+          data["headerStructure"] = [data["headerStructure"][0]];
+          data["header"] = data["headerStructure"][0].map((x) => x.title);
+        };
+        const injected_settings = [];
+        settings.buttons.forEach((/** @type string | object */ item) => {
+          if (typeof item === "string" && isExport(item)) {
+            injected_settings.push({
+              extend: item,
+              exportOptions: {
+                columns: ":visible",
+                customizeData: customizeData,
+              },
+            });
+          } else if (
+            typeof item === "object" &&
+            isExport(item.extend) &&
+            !("customizeData" in item)
+          ) {
+            const _item = item;
+            _item.exportOptions = {
+              columns: ":visible",
+              customizeData: customizeData,
+            };
+            injected_settings.push(_item);
+          } else {
+            injected_settings.push(item);
+          }
+        });
+        settings.buttons = injected_settings;
       }
     });
   })(jQuery);
