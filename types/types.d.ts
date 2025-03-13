@@ -9,14 +9,14 @@ interface AnalyticalHeadersFilterConfig {
    * @remark
    * it was chosen to filter all by default as that is usually the case.
    */
-  ignore: number[];
+  ignore?: number[];
   /**
    * filters to set the `multiple` attribute to `true`
    *
    * @remark
    * setting this field to `true` will make *all* the fields multiple
    */
-  multi: number[] | boolean;
+  multi?: number[] | boolean;
   /**
    * encoded columns and their decode function.
    *
@@ -34,7 +34,7 @@ interface AnalyticalHeadersFilterConfig {
    * }
    * ```
    */
-  encoded: { column_index: (raw: string) => string | null };
+  encoded?: { column_index: (raw: string) => string | null };
   /**
    * encoded columns to check for duplicates
    *
@@ -51,7 +51,7 @@ interface AnalyticalHeadersFilterConfig {
    * `${url_with_primary_key}`__${row_type}
    * ```
    */
-  encoded_check: number[] | boolean;
+  encoded_check?: number[] | boolean;
 }
 interface AnalyticalHeadersStatsConfig {
   /** generate average header **/
@@ -105,23 +105,23 @@ interface AnalyticalHeadersConfig {
 
 interface TableElementStructure {
   /** colspan of cell */
-  colspan: number,
+  colspan: number;
   /** rowspan of cell */
-  rowspan: number,
+  rowspan: number;
   /** text of cell */
-  title: string,
+  title: string;
 }
 interface ButtonsExportCustomizeData {
   /** compiled tbody of datatable */
-  body: string[][]
+  body: string[][];
   /** compiled footer of datatable */
-  footer: string[]
+  footer: string[];
   /** structure of footer */
-  footerStructure: TableElementStructure[][]
+  footerStructure: TableElementStructure[][];
   /** compiled header of datatable */
-  header: string[]
+  header: string[];
   /** structure of header */
-  headerStructure: TableElementStructure[][]
+  headerStructure: TableElementStructure[][];
 }
 
 declare module "datatables.net" {

@@ -86,9 +86,7 @@ class AnalyticalHeaders {
       let selectObj;
       if (!~opts.ignore.indexOf(this.index())) {
         // new select
-        selectObj = $("<select></select>").append(
-          $("<option></option>").attr("value", ""),
-        );
+        selectObj = $("<select></select>");
 
         if (
           opts.multi !== false &&
@@ -103,20 +101,29 @@ class AnalyticalHeaders {
             }
 
             // subtracting 1 so i can use this var in the loop if there's values
+            let clear_search = false;
             const len = values.length - 1;
             let regex = "";
             if (len != -1) {
               values.forEach((i, c) => {
+                if (i == "no-filter") {
+                  clear_search = true;
+                  return false;
+                }
                 regex += `(^${$.fn.dataTable.util.escapeRegex(i)}$)`;
                 if (len != c) {
                   regex += "|";
                 }
               });
             }
-            this.search(regex, true, false).draw();
+            this.search(clear_search ? () => true : regex, true, false).draw();
           });
         } else {
           selectObj.on("change", (e) => {
+            if ($(e.currentTarget).val() == "no-filter") {
+              this.search(() => true, true, false).draw();
+              return;
+            }
             // single item search
             var val = $.fn.dataTable.util.escapeRegex(
               $(e.currentTarget).val().toString(),
@@ -128,7 +135,6 @@ class AnalyticalHeaders {
 
         // fill select field with unique values
         if (~Object.keys(opts.encoded).indexOf(this.index().toString())) {
-          // if column is RunID, break up url data
           let extra_check;
           if (
             opts.encoded_check !== false &&
@@ -165,20 +171,34 @@ class AnalyticalHeaders {
               }
             });
         } else {
+          let hasEmpty = false;
           this.data()
             .unique()
             .sort()
             .each(function (d) {
-              if (d != null || (typeof d == "string" && d.trim() != "")) {
+              if (d != null && typeof d == "string" && d.trim() != "") {
                 // check if current cell is empty
                 selectObj.append(
+                  $("<option></option>").attr("value", d).html(d),
+                );
+              } else if (!hasEmpty) {
+                hasEmpty = true;
+                selectObj.prepend(
                   $("<option></option>").attr("value", d).html(d),
                 );
               }
             });
         }
+
+        selectObj.prepend(
+          $("<option></option>").attr("value", "no-filter").html("No Filter"),
+        );
       }
-      row.append($("<th></th>").addClass("ah_cell").append(selectObj ? selectObj : ""));
+      row.append(
+        $("<th></th>")
+          .addClass("ah_cell")
+          .append(selectObj ? selectObj : ""),
+      );
     });
     $(this.dt.table().header()).append(row);
   }
@@ -208,11 +228,9 @@ class AnalyticalHeaders {
           .addClass(`ah_cell ah_avg_${this.index()}`);
       } else {
         // Empty Cell
-        cell = $("<th></th>").css(
-          "background-color",
-          opts.empty_background_color,
-        )
-        .addClass("ah_cell");
+        cell = $("<th></th>")
+          .css("background-color", opts.empty_background_color)
+          .addClass("ah_cell");
       }
       row.append(cell);
     });
@@ -267,10 +285,7 @@ class AnalyticalHeaders {
           .addClass(`ah_cell ah_stddev_${this.index()}`);
       } else {
         cell = $("<th></th>")
-          .css(
-            "background-color",
-            opts.empty_background_color,
-          )
+          .css("background-color", opts.empty_background_color)
           .addClass("ah_cell");
       }
       row.append(cell);

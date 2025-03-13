@@ -158,7 +158,10 @@ $(document).on("options.dt", function (e, settings) {
   if (settings.buttons) {
     const isExport = (/** @type string */ item) => {
       return (
-        item.includes("copy") || item.includes("excel") || item.includes("csv")
+        item &&
+        (item.includes("copy") ||
+          item.includes("excel") ||
+          item.includes("csv"))
       );
     };
     const customizeData = (
