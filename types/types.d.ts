@@ -4,7 +4,7 @@ import DataTables from "datatables.net";
 
 interface AnalyticalHeadersFilterConfig {
   /**
-   * columns to not generate a filter for
+   * columns to _not_ generate a filter for
    *
    * @remark
    * it was chosen to filter all by default as that is usually the case.
@@ -18,7 +18,7 @@ interface AnalyticalHeadersFilterConfig {
    */
   multi?: number[] | boolean;
   /**
-   * encoded columns and their decode function.
+   * encoded columns and their decode function for creating select options
    *
    * @remark
    * when the function returns `null` the item will be discarded
@@ -26,17 +26,23 @@ interface AnalyticalHeadersFilterConfig {
    * @example
    * ```javascript
    * {
-   *   2: (raw) => {
+   *   2: (data) => {
    *     // `${url}`__${display_value}
-   *     raw.split("__");
-   *     return (raw[1] ? raw[1] : null)
+   *     const _d = data.split("__");
+   *     return _d[1] ? _d[1] : null;
+   *   },
+   *   3: (data) => {
+   *     return data['class'] ? data['class'] : null;
    *   },
    * }
    * ```
    */
-  encoded?: { column_index: (raw: string) => string | null };
+  encoded?: {
+    [column_index: string | number]: (data: unknown) => number | string | null;
+  };
   /**
-   * encoded columns to check for duplicates
+   * encoded columns that should manually decoded when creating options to root
+   * out duplicates
    *
    * @remark
    * This, I assume, is more expensive and that is why it is optional
@@ -52,6 +58,34 @@ interface AnalyticalHeadersFilterConfig {
    * ```
    */
   encoded_check?: number[] | boolean;
+  /**
+   * encoded columns with custom filters
+   *
+   * @remark
+   * datatables usually filters based on what is shown on the column. This would
+   * allow you to filter based on an encoded value not shown.
+   *
+   * @example
+   * {
+   *   2: (value: string, colData: string) => {
+   *     if (d){
+   *       const _d = colData.split("__");
+   *       return _d[1] === value;
+   *     };
+   *     return false;
+   *   },
+   *   9: (values: string[], colData: {key: any}) => {
+   *     return ~values.indexOf(colData["class"]) ? true : false;
+   *   },
+   * }
+   */
+  encoded_filter?: {
+    [column_index: string | number]: (
+      value: string | string[],
+      colData: unknown,
+      rowData?: unknown,
+    ) => boolean;
+  };
 }
 interface AnalyticalHeadersStatsConfig {
   /** generate average header **/
@@ -69,15 +103,17 @@ interface AnalyticalHeadersStatsConfig {
    * @example
    * ```javascript
    * {
-   *   2: (raw) => {
+   *   2: (data) => {
    *     // `${background_color}`__${value}
-   *     raw.split("__");
-   *     return (raw[1] ? raw[1] : null)
+   *     const _d = data.split("__");
+   *     return (_d[1] ? _d[1] : null);
    *   },
    * }
    * ```
    */
-  encoded: { column_index: (raw: string) => string | null };
+  encoded: {
+    [column_index: string | number]: (data: string) => string | null;
+  };
   /**
    * `boolean` columns and their `true` value. This will show a Percentage true
    * in the average header
@@ -85,11 +121,13 @@ interface AnalyticalHeadersStatsConfig {
    * @example
    * ```javascript
    * {
-   *   2: (raw) => raw == "Pass",
+   *   2: (data) => data == "Pass",
    * }
    * ```
    */
-  boolean: { column_index: (raw: string) => boolean | null };
+  boolean: {
+    [column_index: string | number]: (data: string) => boolean | null;
+  };
   /**
    * background of cells that are not targeted
    *
@@ -131,16 +169,18 @@ declare module "datatables.net" {
   }
 
   interface Api {
-    averageAndCount(parser: ((raw: string | number) => string | null) | null): {
+    averageAndCount(
+      parser: ((data: string | number) => string | null) | null,
+    ): {
       average: number;
       count: number;
     };
     standardDeviation(
       average: number,
       count: number,
-      parser: ((raw: string | number) => string | null) | null,
+      parser: ((data: string | number) => string | null) | null,
     ): { population: number; sample: number };
-    truePercentage(true_value: string): string;
+    truePercentage(decider: (data: string|number) => boolean): string;
   }
 
   interface ExtApiSelectorModifier extends ApiSelectorModifier {

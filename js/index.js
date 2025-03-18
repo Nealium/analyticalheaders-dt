@@ -9,7 +9,7 @@ import AnalyticalHeaders from "./AnalyticalHeaders";
 
 /**
  * calculate the average of a column
- * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
+ * @param {(((data: string|number) => string|null)|null)} [parser=null] -
  *   parser function for encoded values
  * @returns {{average: number, count:number}} average and count
  */
@@ -54,7 +54,7 @@ function _average_and_count(parser = null) {
  * calculate the standard_deviation of a column
  * @param {number} average - average for column
  * @param {number} count - number of valid items
- * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
+ * @param {(((data: string|number) => string|null)|null)} [parser=null] -
  *   parser function for encoded values
  * @returns {{population: number, sample: number}}
  *   standard deviations (population, sample)
@@ -99,14 +99,15 @@ function _standard_deviation(average, count, parser = null) {
 
 /**
  * calculate the percentage of `true` values
- * @param {string|number} true_value - value considered as `true`
+ * @param {(data: string|number) => boolean} [decider] -
+ *   decider function to determine if true
  * @returns {string} percentage (*100)
  */
-function _true_percentage(true_value) {
+function _true_percentage(decider) {
   const data = this.flatten();
   const sum = data.reduce(
     (/** @type number **/ accumulator, /** @type string|number **/ item) =>
-      item == true_value ? accumulator + 1 : accumulator,
+      decider(item) ? accumulator + 1 : accumulator,
     0,
   );
   return ((sum / data.length) * 100).toFixed(1);

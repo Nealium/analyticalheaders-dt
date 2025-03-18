@@ -60,6 +60,7 @@
           multi: false,
           encoded: {},
           encoded_check: false,
+          encoded_filter: false,
         },
         stats: {
           average: false,
@@ -143,40 +144,75 @@
                   return;
                 }
 
-                // subtracting 1 so i can use this var in the loop if there's values
-                let clear_search = false;
-                const len = values.length - 1;
-                let regex = "";
-                if (len != -1) {
-                  values.forEach((i, c) => {
-                    if (i == "no-filter") {
-                      clear_search = true;
-                      return false;
-                    }
-                    regex += `(^${$.fn.dataTable.util.escapeRegex(i)}$)`;
-                    if (len != c) {
-                      regex += "|";
-                    }
-                  });
+                let search = null;
+                if (~values.indexOf("no-filter")) {
+                  // clear search
+                  search = () => true;
+                } else if (
+                  ~Object.keys(opts.encoded_filter).indexOf(
+                    this.index().toString(),
+                  )
+                ) {
+                  // custom search
+                  search = (
+                    /** @type {string} */ _,
+                    /** @type any[] */ data,
+                  ) => {
+                    const columnData = data[this.index()];
+                    return opts.encoded_filter[this.index()](
+                      values,
+                      columnData,
+                      data,
+                    );
+                  };
+                } else {
+                  // default regex search [exact match]
+                  search = "";
+                  const len = values.length - 1;
+                  if (len != -1) {
+                    values.forEach((i, c) => {
+                      search += `(^${$.fn.dataTable.util.escapeRegex(i)}$)`;
+                      if (len != c) {
+                        search += "|";
+                      }
+                    });
+                  }
                 }
-                this.search(
-                  clear_search ? () => true : regex,
-                  true,
-                  false,
-                ).draw();
+                this.search(search, true, false).draw();
               });
             } else {
               selectObj.on("change", (e) => {
-                if ($(e.currentTarget).val() == "no-filter") {
-                  this.search(() => true, true, false).draw();
-                  return;
+                const value = $(e.currentTarget).val().toString();
+                let search = null;
+                if (value == "no-filter") {
+                  // clear search
+                  search = () => true;
+                } else if (
+                  ~Object.keys(opts.encoded_filter).indexOf(
+                    this.index().toString(),
+                  )
+                ) {
+                  // custom search
+                  search = (
+                    /** @type {string} */ _,
+                    /** @type any[] */ data,
+                  ) => {
+                    const columnData = data[this.index()];
+                    return opts.encoded_filter[this.index()](
+                      value,
+                      columnData,
+                      data,
+                    );
+                  };
+                } else {
+                  // single item search
+                  const re = $.fn.dataTable.util.escapeRegex(
+                    $(e.currentTarget).val().toString(),
+                  );
+                  search = re ? `^${re}$` : "";
                 }
-                // single item search
-                var val = $.fn.dataTable.util.escapeRegex(
-                  $(e.currentTarget).val().toString(),
-                );
                 // call search function and then redraw table
-                this.search(val ? `^${val}$` : "", true, false).draw();
+                this.search(search, true, false).draw();
               });
             }
 
@@ -204,19 +240,20 @@
                   }
 
                   let add_item = false;
-                  if (
-                    extra_check !== undefined &&
-                    !~extra_check.indexOf(value)
-                  ) {
-                    extra_check.push(value);
-                    add_item = true;
+                  if (extra_check !== undefined) {
+                    if (!~extra_check.indexOf(value)) {
+                      extra_check.push(value);
+                      add_item = true;
+                    }
                   } else {
                     add_item = true;
                   }
 
                   if (add_item) {
                     selectObj.append(
-                      $("<option></option>").attr("value", value).html(value),
+                      $("<option></option>")
+                        .attr("value", value)
+                        .html(value.toString()),
                     );
                   }
                 });
@@ -226,7 +263,7 @@
                 .unique()
                 .sort()
                 .each(function (d) {
-                  if (d != null && typeof d == "string" && d.trim() != "") {
+                  if (d != null || (typeof d == "string" && d.trim() != "")) {
                     // check if current cell is empty
                     selectObj.append(
                       $("<option></option>").attr("value", d).html(d),
@@ -543,7 +580,7 @@
 
     /**
      * calculate the average of a column
-     * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
+     * @param {(((data: string|number) => string|null)|null)} [parser=null] -
      *   parser function for encoded values
      * @returns {{average: number, count:number}} average and count
      */
@@ -591,7 +628,7 @@
      * calculate the standard_deviation of a column
      * @param {number} average - average for column
      * @param {number} count - number of valid items
-     * @param {(((raw: string|number) => string|null)|null)} [parser=null] -
+     * @param {(((data: string|number) => string|null)|null)} [parser=null] -
      *   parser function for encoded values
      * @returns {{population: number, sample: number}}
      *   standard deviations (population, sample)
@@ -639,7 +676,7 @@
 
     /**
      * calculate the percentage of `true` values
-     * @param {(raw: string|number) => boolean} [decider] -
+     * @param {(data: string|number) => boolean} [decider] -
      *   decider function to determine if true
      * @returns {string} percentage (*100)
      */
