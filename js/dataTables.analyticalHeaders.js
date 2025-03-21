@@ -209,7 +209,7 @@
                   const re = $.fn.dataTable.util.escapeRegex(
                     $(e.currentTarget).val().toString(),
                   );
-                  search = re ? `^${re}$` : "";
+                  search = re ? `^${re}$` : "^$";
                 }
                 // call search function and then redraw table
                 this.search(search, true, false).draw();
@@ -263,7 +263,7 @@
                 .unique()
                 .sort()
                 .each(function (d) {
-                  if (d != null || (typeof d == "string" && d.trim() != "")) {
+                  if (d != null && typeof d == "string" && d.trim() != "") {
                     // check if current cell is empty
                     selectObj.append(
                       $("<option></option>").attr("value", d).html(d),
@@ -277,11 +277,13 @@
                 });
             }
 
-            selectObj.prepend(
-              $("<option></option>")
-                .attr("value", "no-filter")
-                .html("No Filter"),
-            );
+            selectObj
+              .prepend(
+                $("<option></option>")
+                  .attr("value", "no-filter")
+                  .html("No Filter"),
+              )
+              .val("no-filter");
           }
           row.append(
             $("<th></th>")
